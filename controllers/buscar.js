@@ -1,113 +1,62 @@
 const { response } = require("express");
-const { ObjectId } = require("mongoose").Types;
-const {Usuario,Categoria, Producto} = require("../models/");
+const { client } = require("../DB/config");
 
-const colleciones = ["categorias", "productos","usuarios", "roles"];
-
-const buscarUsuarios = async ( termino="", res = response) =>{
-    
-    const idMongo = ObjectId.isValid(termino);
-
-    if (idMongo) {
-        const usuario = await Usuario.findById(termino);
-        return res.json({
-            results: (usuario) ? [usuario] : []
-        });
+//Pregunta 1
+//Número de retrasos de salida y de llegada (ArrDelay, DepDelay) por ruta.
+const buscar1 = async (req, res = response) => {
+    const { viaje } = req.query; //req.params
+    let viaje_peticion = "";
+    if (viaje == "salida") {
+        viaje_peticion = "dep_delay"
     }
+    if (viaje == "llega") {
+        viaje_peticion = "arr_delay"
+    }
+    //client.execute(query, ['someone']);
 
-    const regex = new RegExp( termino, "i");
-
-    //const usuarios = await Usuario.find({nombre: regex});
-    //Cumpla A y B [{ nombre: regex, correo: regex  }] 
-    //Cumpla A ó B [{ nombre: regex},{ correo: regex  }] 
-    const usuarios = await Usuario.find({  //.count para contar los resultados
-        $or: [{ nombre: regex }, {correo: regex }],
-        $and: [{ estado: true }]
-    });
-
-    res.json({
-        results: usuarios
+    const query = 'SELECT origin, dest,' + 'sum(' + viaje_peticion + ')' + ' from aeropuertos group by origin, dest';
+    //const query = 'SELECT * from aeropuertos';
+    const result = await client.execute(query);
+    const cont = result.rows.length;
+    return res.status(400).json({
+        msg: "Consulta",
+        result: result.rows,
+        cont
     });
 }
 
-const buscarCategorias = async ( termino="", res = response) =>{
-    
-    const idMongo = ObjectId.isValid(termino);
+//Pregunta 2
+//Número de retrasos de salida y de llegada (ArrDelay, DepDelay) por aerolínea.
+const buscar2 = async (req, res = response) => {
+    const { coleccion, termino } = req.params;
+    //client.execute(query, ['someone']);
 
-    if (idMongo) {
-        const categoria = await Categoria.findById(termino);
-        return res.json({
-            results: (categoria) ? [categoria] : []
-        });
-    }
+    const query = 'SELECT * from aeropuertos';
+    const result = await client.execute(query);
 
-    const regex = new RegExp( termino, "i");
-
-    const categorias = await Categoria.find({nombre: regex, estado:true});
-
-    res.json({
-        results: categorias
+    return res.status(400).json({
+        msg: "Consulta",
+        result: result.rows
     });
 }
 
-const buscarProductos = async ( termino="", res = response) =>{
-    
-    const idMongo = ObjectId.isValid(termino);
+//Pregunta 3
+//Número de retrasos por aerolínea (CarrierDelay) y por condiciones climáticas (WeatherDelay), por ruta.
+const buscar3 = async (req, res = response) => {
+    const { coleccion, termino } = req.params;
+    //client.execute(query, ['someone']);
 
-    if (idMongo) {
-        const producto = await Producto.findById(termino)
-        .populate("categoria","nombre");
-        return res.json({
-            results: (producto) ? [producto] : []
-        });
-    }
+    const query = 'SELECT * from aeropuertos';
+    const result = await client.execute(query);
 
-    const regex = new RegExp( termino, "i");
-
-    const productos = await Producto.find({nombre: regex, estado:true})
-    .populate("categoria","nombre");
-
-    res.json({
-        results: productos
+    return res.status(400).json({
+        msg: "Consulta",
+        result: result.rows
     });
-}
-
-/*Para buscar productos que esten en una categoria
-    {categoria: ObjectId("165456DASD")}
-*/
-const buscar = (req, res = response)=>{
-
-    const {coleccion,termino} = req.params;
-
-    if (!colleciones.includes(coleccion)) {
-        return res.status(400).json({
-            msg: `Las colecciones permitidas son: ${colleciones}`
-        });
-    }
-
-    switch (coleccion) {
-        case "usuarios": 
-            buscarUsuarios(termino, res);
-        break;
-
-        case "categorias":
-            buscarCategorias(termino, res);
-        break;
-
-        case "productos":
-            buscarProductos(termino, res);
-        break;
-
-        case "roles":
-        break;
-
-        default:
-            return res.status(500).json({
-                msg: `Esta busqueda no esta hecha`
-            })
-    }
 }
 
 module.exports = {
-    buscar
+    buscar1,
+    buscar2,
+    buscar3
 }
