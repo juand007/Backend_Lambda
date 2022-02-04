@@ -4,54 +4,88 @@ const { client } = require("../DB/config");
 //Pregunta 1
 //Número de retrasos de salida y de llegada (ArrDelay, DepDelay) por ruta.
 const buscar1 = async (req, res = response) => {
-    const { viaje } = req.query; //req.params
+    const { viaje, limit } = req.query; //req.params
     let viaje_peticion = "";
-    if (viaje == "salida") {
-        viaje_peticion = "dep_delay"
-    }
-    if (viaje == "llega") {
-        viaje_peticion = "arr_delay"
-    }
-    //client.execute(query, ['someone']);
+    let name = "";
 
-    const query = 'SELECT origin, dest,' + 'sum(' + viaje_peticion + ')' + ' from aeropuertos group by origin, dest ALLOW FILTERING';
-    //const query = 'SELECT * from aeropuertos';
+    if (viaje == "salida") {
+        viaje_peticion = "dep_delay";
+        name = "Retraso_Salida";
+    }
+    if (viaje == "llegada") {
+        viaje_peticion = "arr_delay";
+        name = "Retraso_Llegada";
+    }
+
+    const query = `select origen, destino, sum(${viaje_peticion}) as ${name} from airports group by origen, dest limit 100`; //airports
+    //const query = `select * from airports`; //airports
     const result = await client.execute(query);
-    const cont = result.rows.length;
+
     return res.status(400).json({
-        msg: "Consulta",
-        result: result.rows,
-        cont
+        msg: "Respuesta P1",
+        viaje: name,
+        //resultados: result.rows.length,
+        data: result.rows,
     });
 }
 
 //Pregunta 2
 //Número de retrasos de salida y de llegada (ArrDelay, DepDelay) por aerolínea.
 const buscar2 = async (req, res = response) => {
-    const { coleccion, termino } = req.params;
-    //client.execute(query, ['someone']);
+    const { viaje, limit } = req.query; //req.params
+    let viaje_peticion = "";
+    let name = "";
+    let limite = 100;
 
-    const query = 'SELECT * from aeropuertos';
+    if (!!limit) {
+        limite = limit;
+    }
+
+    if (viaje == "salida") {
+        viaje_peticion = "dep_delay";
+        name = "Retraso_Salida";
+    }
+    if (viaje == "llegada") {
+        viaje_peticion = "arr_delay";
+        name = "Retraso_Llegada";
+    }
+
+    const query = `select aerolinea as aerolinea_code, carrier as Aerolinea, sum(${viaje_peticion}) as ${name} from vista_aerolinea group by aerolinea limit ${limite}`;
     const result = await client.execute(query);
 
     return res.status(400).json({
-        msg: "Consulta",
-        result: result.rows
+        msg: "Respuesta P2",
+        viaje: name,
+        //resultados: result.rows.length,
+        data: result.rows,
     });
 }
 
 //Pregunta 3
 //Número de retrasos por aerolínea (CarrierDelay) y por condiciones climáticas (WeatherDelay), por ruta.
 const buscar3 = async (req, res = response) => {
-    const { coleccion, termino } = req.params;
-    //client.execute(query, ['someone']);
+    const { viaje } = req.query; //req.params
+    let viaje_peticion = "";
+    let name = "";
 
-    const query = 'SELECT * from aeropuertos';
-    const result = await client.execute(query);
+    if (viaje == "aerolinea") {
+        viaje_peticion = "carrier_delay";
+        name = "Retraso_Aerolinea";
+    }
+    if (viaje == "clima") {
+        viaje_peticion = "weather_delay";
+        name = "Retraso_Clima";
+    }
+
+    //const query = `select origen, destino, sum(${viaje_peticion}) as ${name} from airports group by origen, dest`; //limit 100
+    const query = `select carrier as Aerolinea, origen as Origen, destino as Destino, sum(${viaje_peticion}) as ${name} from vista_aerolinea group by aerolinea, origen, dest limit 100`; //limit 100
+    const result = await client.execute(query); //client.stream();
 
     return res.status(400).json({
-        msg: "Consulta",
-        result: result.rows
+        msg: "Respuesta P3",
+        viaje: name,
+        //resultados: result.rows.length,
+        data: result.rows,
     });
 }
 
