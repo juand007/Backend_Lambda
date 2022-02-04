@@ -1,15 +1,8 @@
-const Categoria  = require("./categoria.js");
-const Rol  = require("./rol.js");
-const Usuario  = require("./usuario.js");
-const Server  = require("./server.js");
-const Producto  = require("./producto");
-
+const Aeropuerto = require("./aeropuerto.js");
+const Server = require("./server.js");
 
 //Se exporta todo de los archivos AA.js
-module.exports ={
-    Server,
-    Categoria,  
-    Rol,  
-    Usuario,
-    Producto
+module.exports = {
+    Aeropuerto,
+    Server
 }

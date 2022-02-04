@@ -1,95 +1,151 @@
 const { response } = require("express");
-const { client } = require("../DB/config");
+const { Aeropuerto } = require("../models");
+
+//Api Aeropuertos
+const buscar0 = async (req, res = response) => {
+    const result = await Aeropuerto.distinct('aeropuerto');
+
+    return res.status(200).json({
+        msg: "Api get aeropuertos",
+        data: result
+    });
+}
 
 //Pregunta 1
 //Número de retrasos de salida y de llegada (ArrDelay, DepDelay) por ruta.
 const buscar1 = async (req, res = response) => {
-    const { viaje, limit } = req.query; //req.params
-    let viaje_peticion = "";
-    let name = "";
+    const { viaje, desde = 0, limite = 100 } = req.query; //req.params
 
-    if (viaje == "salida") {
-        viaje_peticion = "dep_delay";
-        name = "Retraso_Salida";
-    }
+    // viaje == "salida"
+    let viaje_peticion = "dep_delay";
+    let name = "retraso_salida";
+
     if (viaje == "llegada") {
         viaje_peticion = "arr_delay";
-        name = "Retraso_Llegada";
+        name = "retraso_llegada";
     }
 
-    const query = `select origen, destino, sum(${viaje_peticion}) as ${name} from airports group by origen, dest limit 100`; //airports
-    //const query = `select * from airports`; //airports
-    const result = await client.execute(query);
+    const query = [
+        {
+            "$group": {
+                "_id": {
+                    'origen': '$origen',
+                    'destino': '$destino'
+                },
+                [name]: {
+                    "$sum": `$${viaje_peticion}`
+                }
+            }
+        }
+    ];
+    const result = await Aeropuerto.aggregate(query).skip(Number(desde)).limit(Number(limite));
+    const result_format = result.map(item => ({
+        origen: item._id.origen,
+        destino: item._id.destino,
+        [name]: item[name]
+    }));
 
-    return res.status(400).json({
+    return res.status(200).json({
         msg: "Respuesta P1",
         viaje: name,
-        //resultados: result.rows.length,
-        data: result.rows,
+        data: result_format
     });
 }
 
 //Pregunta 2
 //Número de retrasos de salida y de llegada (ArrDelay, DepDelay) por aerolínea.
 const buscar2 = async (req, res = response) => {
-    const { viaje, limit } = req.query; //req.params
-    let viaje_peticion = "";
-    let name = "";
-    let limite = 100;
+    const { viaje, desde = 0, limite = 100 } = req.query; //req.params
 
-    if (!!limit) {
-        limite = limit;
-    }
+    // viaje == "salida"
+    let name = "retraso_salida";
+    let viaje_peticion = "dep_delay";
 
-    if (viaje == "salida") {
-        viaje_peticion = "dep_delay";
-        name = "Retraso_Salida";
-    }
     if (viaje == "llegada") {
+        name = "retraso_llegada";
         viaje_peticion = "arr_delay";
-        name = "Retraso_Llegada";
     }
 
-    const query = `select aerolinea as aerolinea_code, carrier as Aerolinea, sum(${viaje_peticion}) as ${name} from vista_aerolinea group by aerolinea limit ${limite}`;
-    const result = await client.execute(query);
+    const query = [
+        {
+            "$group": {
+                "_id": {
+                    'aerolinea_code': "$aeropuerto",
+                    'aerolinea': "$carrier",
+                },
+                [name]: {
+                    "$sum": `$${viaje_peticion}`
+                }
+            }
+        }
+    ];
+    const result = await Aeropuerto.aggregate(query).skip(Number(desde)).limit(Number(limite));
+    const result_format = result.map(item => {
+        if (!!item._id.aerolinea_code == false) {
+            item._id.aerolinea_code = "Otro";
+        }
+        if (!!item._id.aerolinea == false) {
+            item._id.aerolinea = "Otro";
+        }
+        return {
+            aerolinea_code: item._id.aerolinea_code,
+            aerolinea: item._id.aerolinea,
+            [name]: item[name]
+        };
+    });
 
-    return res.status(400).json({
+    return res.status(200).json({
         msg: "Respuesta P2",
         viaje: name,
-        //resultados: result.rows.length,
-        data: result.rows,
+        data: result_format
     });
 }
 
 //Pregunta 3
 //Número de retrasos por aerolínea (CarrierDelay) y por condiciones climáticas (WeatherDelay), por ruta.
 const buscar3 = async (req, res = response) => {
-    const { viaje } = req.query; //req.params
-    let viaje_peticion = "";
-    let name = "";
+    const { viaje, desde = 0, limite = 100 } = req.query; //req.params
 
-    if (viaje == "aerolinea") {
-        viaje_peticion = "carrier_delay";
-        name = "Retraso_Aerolinea";
-    }
+    // viaje == "aerolinea"
+    let viaje_peticion = "carrier_delay";
+    let name = "retraso_aerolinea";
+
     if (viaje == "clima") {
         viaje_peticion = "weather_delay";
-        name = "Retraso_Clima";
+        name = "retraso_clima";
     }
 
-    //const query = `select origen, destino, sum(${viaje_peticion}) as ${name} from airports group by origen, dest`; //limit 100
-    const query = `select carrier as Aerolinea, origen as Origen, destino as Destino, sum(${viaje_peticion}) as ${name} from vista_aerolinea group by aerolinea, origen, dest limit 100`; //limit 100
-    const result = await client.execute(query); //client.stream();
+    const query = [
+        {
+            "$group": {
+                "_id": {
+                    'aerolinea': "$carrier",
+                    'origen': '$origen',
+                    'destino': '$destino'
+                },
+                [name]: {
+                    "$sum": `$${viaje_peticion}`
+                }
+            }
+        }
+    ];
+    const result = await Aeropuerto.aggregate(query).skip(Number(desde)).limit(Number(limite));
+    const result_format = result.map(item => ({
+        aerolinea: item._id.aerolinea,
+        origen: item._id.origen,
+        destino: item._id.destino,
+        [name]: item[name]
+    }));
 
-    return res.status(400).json({
+    return res.status(200).json({
         msg: "Respuesta P3",
         viaje: name,
-        //resultados: result.rows.length,
-        data: result.rows,
+        data: result_format
     });
 }
 
 module.exports = {
+    buscar0,
     buscar1,
     buscar2,
     buscar3

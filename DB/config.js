@@ -1,29 +1,25 @@
-require('dotenv').config();
-const cassandra = require('cassandra-driver');
-
-const url = process.env.URL;
-const localDataCenter = process.env.LOCAL_DATA_CENTER;
-const user = process.env.CASSANDRA_USER;
-const pass = process.env.CASSANDRA_PASS;
-const keyspace = process.env.KEYSPACE;
-
-const client = new cassandra.Client({
-    contactPoints: [url],
-    localDataCenter:localDataCenter,
-    authProvider: new cassandra.auth.PlainTextAuthProvider(user, pass),
-    keyspace:keyspace
-});
+const mongoose = require("mongoose");
 
 const dbconection = async () => {
     try {
-        await client.connect();
-        console.log("Base de datos ONline");
+        mongoose.connect("mongodb://167.172.141.225/bigdata", {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            //useFindAndModify: false
+        });
+        
+        const db = mongoose.connection;
+        db.on("error", console.error.bind(console, "connection error: "));
+        db.once("open", function () {
+            console.log("Connected successfully");
+        });
+
+        console.log("Base de datos Online");
     } catch (error) {
         throw new Error("Error al iniciar la base de datos");
     }
 }
 
 module.exports = {
-    dbconection,
-    client
+    dbconection
 }

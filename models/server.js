@@ -2,13 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const { dbconection } = require("../DB/config");
 
-class Server{
-    constructor(){
+class Server {
+    constructor() {
         this.app = express();
         this.port = process.env.PORT;
-        
-        this.paths ={ 
-            buscar :     "/api/buscar"
+
+        this.paths = {
+            buscar: "/api/buscar"
         }
 
         //Conectar a base de datos
@@ -18,12 +18,12 @@ class Server{
         //Rutas de la app
         this.router();
     }
-    
-    async conectarDB(){
+
+    async conectarDB() {
         await dbconection();
     }
 
-    middleware(){
+    middleware() {
         //Cors
         this.app.use(cors());
 
@@ -34,13 +34,13 @@ class Server{
         this.app.use(express.static("public"));
     }
 
-    router(){
+    router() {
         this.app.use(this.paths.buscar, require("../routes/buscar"));
     }
 
-    listen(){
-        this.app.listen(this.port,()=>{
-            console.log("App listening in port:",this.port);
+    listen() {
+        this.app.listen(this.port, () => {
+            console.log("App listening in port:", this.port);
         });
     }
 }
