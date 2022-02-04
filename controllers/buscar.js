@@ -14,7 +14,7 @@ const buscar1 = async (req, res = response) => {
     }
     //client.execute(query, ['someone']);
 
-    const query = 'SELECT origin, dest,' + 'sum(' + viaje_peticion + ')' + ' from aeropuertos group by origin, dest';
+    const query = 'SELECT origin, dest,' + 'sum(' + viaje_peticion + ')' + ' from aeropuertos group by origin, dest ALLOW FILTERING';
     //const query = 'SELECT * from aeropuertos';
     const result = await client.execute(query);
     const cont = result.rows.length;
