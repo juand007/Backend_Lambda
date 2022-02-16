@@ -1,0 +1,15 @@
+{
+    "data": [
+        {
+            "Origen": "Denver Intl",
+            "Destino": "Phoenix Sky Harbor International",
+            "Conteo de Retrasos": 1922
+        },
+        {
+            "Origen": "Burbank-Glendale-Pasadena",
+            "Destino": "Phoenix Sky Harbor International",
+            "Conteo de Retrasos": 1346
+        }
+    ]
+}
+    
